@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>lanelet2_cs_converter</name>
+    <version>1.0.0</version>
+    <description>The lanelet package</description>
+    <maintainer email="tomoya.sato@tier4.jp">Tomoya-Sato</maintainer>
+    <author>Tomoya-Sato</author>
+    <license>NONE</license>
+
+    <buildtool_depend>catkin</buildtool_depend>
+
+    <depend>llh_converter</depend>
+
+    <export>
+    </export>
+</package>

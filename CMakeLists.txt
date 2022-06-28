@@ -9,7 +9,10 @@ else ()
 endif()
 
 find_package(catkin REQUIRED COMPONENTS
+  roscpp
   llh_converter
+  grid_map_core
+  grid_map_pcl
 )
 # find_package(TinyXML2 REQUIRED)
 
@@ -26,3 +29,7 @@ add_executable(jprcs src/jprcs.cpp src/tinyxml2.cpp)
 # target_link_libraries(jprcs ${catkin_LIBRARIES} ${TinyXML2_LIBRARIES})
 target_link_libraries(jprcs ${catkin_LIBRARIES})
 add_dependencies(jprcs ${catkin_EXPORTED_TARGETS})
+
+add_executable(elevation_map_checker src/elevation_map_checker.cpp src/tinyxml2.cpp)
+target_link_libraries(elevation_map_checker ${catkin_LIBRARIES})
+add_dependencies(elevation_map_checker ${catkin_EXPORTED_TARGETS})

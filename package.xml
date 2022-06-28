@@ -9,7 +9,10 @@
 
     <buildtool_depend>catkin</buildtool_depend>
 
+    <depend>roscpp</depend>
     <depend>llh_converter</depend>
+    <depend>grid_map_core</depend>
+    <depend>grid_map_pcl</depend>
 
     <export>
     </export>

@@ -51,6 +51,9 @@ int main(int argc, char** argv)
   pub.publish(msg);
   std::cout << "published" << std::endl;
 
+  grid_map::Position pos(15797., 38057.);
+  std::cout << "cell: " << elevation_map.atPosition(std::string("elevation"), pos) << std::endl;
+
   ros::spin();
 
   return 0;

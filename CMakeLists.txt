@@ -13,6 +13,9 @@ find_package(catkin REQUIRED COMPONENTS
   llh_converter
   grid_map_core
   grid_map_pcl
+  # lanelet2_io
+  # lanelet2_core
+  # lanelet2_projection
 )
 # find_package(TinyXML2 REQUIRED)
 

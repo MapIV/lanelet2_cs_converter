@@ -77,9 +77,82 @@ public:
     std::cout << "Vector size: " << point_vec_.size() << std::endl;
   }
 
+  LL2Point getPoint(int id)
+  {
+    if (point_vec_.size() >= id)
+      return point_vec_[id];
+    else
+    {
+      std::cerr << "\033[31;1mError: Invalid point id too large: " << id << "\033[m" << std::endl;
+      exit(1);
+    }
+  }
+
 private:
   std::vector<LL2Point> point_vec_;
   std::vector<LL2Point> tmp_vec_;
+};
+
+struct LL2LineString
+{
+  unsigned int id;
+  std::vector<unsigned int> id_vec;
+  bool valid = false;
+
+  void print()
+  {
+    std::cout << "ID: " << id << std::endl;
+    std::cout << "Nodes Num: " << id_vec.size() << std::endl;
+    std::cout << "Nodes: ";
+    for (int i = 0; i < id_vec.size(); i++)
+    {
+      std::cout << id_vec[i] << ", ";
+    }
+    std::cout << std::endl;
+    std::cout << "VALID: " << valid << std::endl;
+  }
+};
+
+class LL2LineStrings
+{
+public:
+  void addNewLineString(const LL2LineString& line_string)
+  {
+    line_vec_.push_back(line_string);
+  }
+
+  LL2LineString getLineString(const int& id)
+  {
+    for (int i = 0; i < line_vec_.size(); i++)
+    {
+      if (line_vec_[i].id == id)
+        return line_vec_[i];
+    }
+
+    std::cerr << "\033[31;1mError: Invalid id too large\033[m" << std::endl;
+    exit(1);
+  }
+
+  LL2LineString getLineStringBySeq(const int& i)
+  {
+    if (line_vec_.size() >= i)
+    {
+      return line_vec_[i];
+    }
+    else
+    {
+      std::cerr << "\033[31;1mError\033[m" << std::endl;
+      exit(1);
+    }
+  }
+
+  std::size_t size()
+  {
+    return line_vec_.size();
+  }
+
+private:
+  std::vector<LL2LineString> line_vec_;
 };
 
 #endif

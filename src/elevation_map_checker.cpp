@@ -48,6 +48,10 @@ int main(int argc, char** argv)
   msg.info.header.seq = 0;
   msg.info.header.stamp = ros::Time::now();
 
+  std::cout << "Length: " << elevation_map.getLength()[0] << ", " << elevation_map.getLength()[1] << std::endl;
+  std::cout << "Position: " << elevation_map.getPosition()[0] << ", " << elevation_map.getPosition()[1] << std::endl;
+  std::cout << "Resolution: " << elevation_map.getResolution() << std::endl;
+
   pub.publish(msg);
   std::cout << "published" << std::endl;
 

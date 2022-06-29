@@ -33,3 +33,7 @@ add_dependencies(jprcs ${catkin_EXPORTED_TARGETS})
 add_executable(elevation_map_checker src/elevation_map_checker.cpp src/tinyxml2.cpp)
 target_link_libraries(elevation_map_checker ${catkin_LIBRARIES})
 add_dependencies(elevation_map_checker ${catkin_EXPORTED_TARGETS})
+
+add_executable(lanelet2_parser src/lanelet2_parser.cpp src/tinyxml2.cpp)
+target_link_libraries(lanelet2_parser ${catkin_LIBRARIES})
+add_dependencies(lanelet2_parser ${catkin_EXPORTED_TARGETS})

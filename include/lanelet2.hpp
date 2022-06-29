@@ -155,4 +155,38 @@ private:
   std::vector<LL2LineString> line_vec_;
 };
 
+struct LL2LaneLet
+{
+  unsigned int id;
+  unsigned int right_id, left_id;
+  bool valid = false;
+};
+
+class LL2LaneLets
+{
+public:
+  void addNewLaneLet(const LL2LaneLet& lanelet)
+  {
+    lane_vec_.push_back(lanelet);
+  }
+
+  std::size_t size()
+  {
+    return lane_vec_.size();
+  }
+
+  LL2LaneLet getLaneLetBySeq(const int& i)
+  {
+    if (lane_vec_.size() >= i)
+      return lane_vec_[i];
+    else
+    {
+      std::cerr << "\033[31;1mError: \033[m" << std::endl;
+      exit(1);
+    }
+  }
+private:
+  std::vector<LL2LaneLet> lane_vec_;
+};
+
 #endif

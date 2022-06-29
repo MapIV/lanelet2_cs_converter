@@ -73,6 +73,21 @@ int main(int argc, char** argv)
     ll2linestrings.addNewLineString(ls);
   }
 
+  LL2LaneLets ll2lanelets;
+
+  for (tinyxml2::XMLElement* element = root->FirstChildElement("relation"); element != NULL; element = element->NextSiblingElement("relation"))
+  {
+    LL2LaneLet ll;
+    ll.id = element->UnsignedAttribute("id");
+
+    for (tinyxml2::XMLElement* tag = element->FirstChildElement("member"); tag != NULL; tag = tag->NextSiblingElement("member"))
+    {
+      if (std::string(tag->Attribute("role")) == std::string("right")) ll.right_id = tag->UnsignedAttribute("ref");
+      if (std::string(tag->Attribute("role")) == std::string("left")) ll.left_id = tag->UnsignedAttribute("ref");
+    }
+
+    ll2lanelets.addNewLaneLet(ll);
+  }
 
   visualization_msgs::Marker ls_msg;
   ls_msg.header.frame_id = "map";
@@ -85,9 +100,26 @@ int main(int argc, char** argv)
   ls_msg.color.g = 1.0;
   ls_msg.color.a = 1.0;
 
-  for (int k = 0; k < ll2linestrings.size(); k++)
+  for (int k = 0; k < ll2lanelets.size(); k++)
   {
-    LL2LineString line_string = ll2linestrings.getLineStringBySeq(k);
+    LL2LaneLet ll = ll2lanelets.getLaneLetBySeq(k);
+    std::cout << "right: " << ll.right_id << ", left: " << ll.left_id << std::endl;
+    
+    LL2LineString line_string = ll2linestrings.getLineString(ll.right_id);
+
+    for (int i = 0; i < line_string.id_vec.size(); i++)
+    {
+      LL2Point p = ll2points.getPoint(line_string.id_vec[i]);
+      geometry_msgs::Point q;
+      q.x = p.local_x;
+      q.y = p.local_y;
+      q.z = p.elevation;
+      if (i != 0 && i != line_string.id_vec.size() - 1)
+        ls_msg.points.push_back(q);
+      ls_msg.points.push_back(q);
+    }
+
+    line_string = ll2linestrings.getLineString(ll.left_id);
 
     for (int i = 0; i < line_string.id_vec.size(); i++)
     {

@@ -13,6 +13,7 @@
     <depend>llh_converter</depend>
     <depend>grid_map_core</depend>
     <depend>grid_map_pcl</depend>
+    <depend>nav_msgs</depend>
 
     <export>
     </export>

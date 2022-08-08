@@ -2,14 +2,17 @@
 #include "lanelet2_parser.hpp"
 
 #include <pcl/io/pcd_io.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 #include <ros/ros.h>
+#include <tf/transform_broadcaster.h>
 #include <grid_map_core/GridMap.hpp>
 #include <grid_map_ros/GridMapRosConverter.hpp>
 
 #include <grid_map_pcl/GridMapPclLoader.hpp>
 #include <grid_map_pcl/helpers.hpp>
 
+#include <sensor_msgs/PointCloud2.h>
 #include <grid_map_msgs/GridMap.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <visualization_msgs/Marker.h>
@@ -24,6 +27,7 @@ int main(int argc, char** argv)
   ros::Publisher elev_pub = nh.advertise<grid_map_msgs::GridMap>("grid_map", 1, true);
   ros::Publisher og_pub = nh.advertise<nav_msgs::OccupancyGrid>("og_map", 1, true);
   ros::Publisher lane_pub = nh.advertise<visualization_msgs::Marker>("lanelet", 1, true);
+  ros::Publisher pcd_pub = nh.advertise<sensor_msgs::PointCloud2>("pcd_map", 1, true);
   std::string input_pcd = argv[1];
   std::string input_osm = argv[2];
   std::string config_file = argv[3];
@@ -86,6 +90,14 @@ int main(int argc, char** argv)
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::io::loadPCDFile(input_pcd, *cloud);
+
+  sensor_msgs::PointCloud2 pcd_msg;
+  pcl::toROSMsg(*cloud, pcd_msg);
+  pcd_msg.header.frame_id = "map";
+  pcd_msg.header.stamp = ros::Time::now();
+
+  pcd_pub.publish(pcd_msg);
+
   grid_map_pcl_loader.setInputCloud(cloud);
 
   grid_map_pcl_loader.preProcessInputCloud();
@@ -142,12 +154,32 @@ int main(int argc, char** argv)
 
   og.data.resize(width * height);
 
+  tf::Transform transform;
+  tf::Vector3 v(p.x, p.y, p.z);
+  tf::Quaternion r;
+  r.setRPY(0, 0, 0);
+  transform.setOrigin(v);
+  transform.setRotation(r);
+
+  std::cout << "TF: " << p.x << ", " << p.y << ", " << p.z << std::endl;
+  tf::TransformBroadcaster br;
+  sleep(1);
+  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "map"));
+
   double value_max = -1;
   double value_min = 100000;
 
+  int num = 0, max_num = width * height;
+  int curr_prog = 0, last_prog = 0;
+
   for (int i = 0; i < width * height; i++)
   {
-    std::cout << i << " / " << width * height << "\r" << std::flush;
+    curr_prog = static_cast<int>((i + 1) / static_cast<double>(max_num) * 100);
+    if (curr_prog > last_prog)
+    {
+      last_prog = curr_prog;
+      std::cout << "progress: " << curr_prog << " / 100" << "\r" << std::flush;
+    }
     int id_x = i % width;
     int id_y = i / width;
     double x = p.x + id_x * resolution;
@@ -212,7 +244,9 @@ int main(int argc, char** argv)
   grid_map::Position pos(p.x + 5, p.y + 5);
   std::cout << "cell: " << elevation_map.atPosition(std::string("elevation"), pos) << std::endl;
 
-  ros::spin();
+  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "map"));
+  while (ros::ok())
+    ros::spinOnce();
 
   return 0;
 }

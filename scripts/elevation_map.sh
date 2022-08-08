@@ -43,6 +43,6 @@ OSM_FILE=$2
 
 rviz -d ${BASE_DIR}"/rviz/elevation_map.rviz" &
 
-sleep1
+sleep 1
 
 rosrun lanelet2_cs_converter elevation_map_checker $PCD_FILE $OSM_FILE $CONFIG_FILE

@@ -28,6 +28,9 @@ int main(int argc, char** argv)
   ros::Publisher og_pub = nh.advertise<nav_msgs::OccupancyGrid>("og_map", 1, true);
   ros::Publisher lane_pub = nh.advertise<visualization_msgs::Marker>("lanelet", 1, true);
   ros::Publisher pcd_pub = nh.advertise<sensor_msgs::PointCloud2>("pcd_map", 1, true);
+
+  tf::TransformBroadcaster br;
+
   std::string input_pcd = argv[1];
   std::string input_osm = argv[2];
   std::string config_file = argv[3];
@@ -78,8 +81,6 @@ int main(int argc, char** argv)
       ls_msg.points.push_back(p);
     }
   }
-
-  lane_pub.publish(ls_msg);
 
   gm::setVerbosityLevelToDebugIfFlagSet(nh);
 
@@ -155,16 +156,13 @@ int main(int argc, char** argv)
   og.data.resize(width * height);
 
   tf::Transform transform;
-  tf::Vector3 v(p.x, p.y, p.z);
+  tf::Vector3 v(-p.x, -p.y, -p.z);
   tf::Quaternion r;
   r.setRPY(0, 0, 0);
   transform.setOrigin(v);
   transform.setRotation(r);
 
   std::cout << "TF: " << p.x << ", " << p.y << ", " << p.z << std::endl;
-  tf::TransformBroadcaster br;
-  sleep(1);
-  br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "map"));
 
   double value_max = -1;
   double value_min = 100000;
@@ -237,6 +235,7 @@ int main(int argc, char** argv)
   //   }
   // }
 
+  lane_pub.publish(ls_msg);
   elev_pub.publish(msg);
   og_pub.publish(og);
   std::cout << "published" << std::endl;

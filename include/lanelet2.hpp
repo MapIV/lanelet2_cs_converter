@@ -50,7 +50,7 @@ public:
     }
     std::cout << "max id: " << max_id << std::endl;
 
-    point_vec_.resize(max_id);
+    point_vec_.resize(max_id + 1);
 
     for (int i = 0; i < tmp_vec_.size(); i++)
     {

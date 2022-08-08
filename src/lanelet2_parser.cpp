@@ -3,25 +3,15 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 
+#include "lanelet2_parser.hpp"
 #include "lanelet2.hpp"
 #include "tinyxml2.h"
 
-int main(int argc, char** argv)
+
+bool LaneletParser::loadOSM(const std::string& osm_file)
 {
-  ros::init(argc, argv, "lanelet2_parser");
-  ros::NodeHandle nh;
-
-  ros::Publisher pub = nh.advertise<visualization_msgs::Marker>("lanelet", 1, true);
-  std::string input_osm = argv[1];
-
-  // lanelet::projection::UtmProjector projector(lanelet::Origin({49, 8.4}));
-  // lanelet::LaneletMapPtr map = lanelet::load(input_osm, projector);
-
-  LL2Points ll2points;
-  LL2LineStrings ll2linestrings;
-
   tinyxml2::XMLDocument doc;
-  doc.LoadFile(input_osm.c_str());
+  doc.LoadFile(osm_file.c_str());
 
   tinyxml2::XMLElement* root = doc.FirstChildElement("osm");
   if (root == NULL)
@@ -47,10 +37,10 @@ int main(int argc, char** argv)
 
     p.valid = true;
 
-    ll2points.addNewPoint(p);
+    ll2_points_.addNewPoint(p);
   }
 
-  ll2points.makeVec();
+  ll2_points_.makeVec();
 
   for (tinyxml2::XMLElement* element = root->FirstChildElement("way"); element != NULL; element = element->NextSiblingElement("way"))
   {
@@ -64,10 +54,8 @@ int main(int argc, char** argv)
     }
     ls.valid = true;
 
-    ll2linestrings.addNewLineString(ls);
+    ll2_linestrings_.addNewLineString(ls);
   }
-
-  LL2LaneLets ll2lanelets;
 
   for (tinyxml2::XMLElement* element = root->FirstChildElement("relation"); element != NULL; element = element->NextSiblingElement("relation"))
   {
@@ -80,57 +68,140 @@ int main(int argc, char** argv)
       if (std::string(tag->Attribute("role")) == std::string("left")) ll.left_id = tag->UnsignedAttribute("ref");
     }
 
-    ll2lanelets.addNewLaneLet(ll);
+    ll2_lanelets_.addNewLaneLet(ll);
   }
 
-  visualization_msgs::Marker ls_msg;
-  ls_msg.header.frame_id = "map";
-  ls_msg.header.stamp = ros::Time::now();
-  ls_msg.action = visualization_msgs::Marker::ADD;
-  ls_msg.pose.orientation.w = 1.0;
-  ls_msg.id = 0;
-  ls_msg.type = visualization_msgs::Marker::LINE_LIST;
-  ls_msg.scale.x = 0.2;
-  ls_msg.color.g = 1.0;
-  ls_msg.color.a = 1.0;
-
-  for (int k = 0; k < ll2lanelets.size(); k++)
-  {
-    LL2LaneLet ll = ll2lanelets.getLaneLetBySeq(k);
-    std::cout << "right: " << ll.right_id << ", left: " << ll.left_id << std::endl;
-    
-    LL2LineString line_string = ll2linestrings.getLineString(ll.right_id);
-
-    for (int i = 0; i < line_string.id_vec.size(); i++)
-    {
-      LL2Point p = ll2points.getPoint(line_string.id_vec[i]);
-      geometry_msgs::Point q;
-      q.x = p.local_x;
-      q.y = p.local_y;
-      q.z = p.elevation;
-      if (i != 0 && i != line_string.id_vec.size() - 1)
-        ls_msg.points.push_back(q);
-      ls_msg.points.push_back(q);
-    }
-
-    line_string = ll2linestrings.getLineString(ll.left_id);
-
-    for (int i = 0; i < line_string.id_vec.size(); i++)
-    {
-      LL2Point p = ll2points.getPoint(line_string.id_vec[i]);
-      geometry_msgs::Point q;
-      q.x = p.local_x;
-      q.y = p.local_y;
-      q.z = p.elevation;
-      if (i != 0 && i != line_string.id_vec.size() - 1)
-        ls_msg.points.push_back(q);
-      ls_msg.points.push_back(q);
-    }
-  }
-
-  pub.publish(ls_msg);
-
-  ros::spin();
-
-  return 0;
+  return true;
 }
+
+bool LaneletParser::getLanePointVec(const unsigned int& lanelet_seq, std::vector<LL2Point>& right_lane, std::vector<LL2Point>& left_lane)
+{
+  LL2LaneLet ll = ll2_lanelets_.getLaneLetBySeq(lanelet_seq);
+
+  LL2LineString line_string = ll2_linestrings_.getLineString(ll.right_id);
+  right_lane.clear();
+  right_lane.reserve(line_string.id_vec.size());
+  for (int i = 0; i < line_string.id_vec.size(); i++)
+  {
+    LL2Point p = ll2_points_.getPoint(line_string.id_vec[i]);
+    right_lane.push_back(p);
+  }
+
+  line_string = ll2_linestrings_.getLineString(ll.left_id);
+  left_lane.clear();
+  left_lane.reserve(line_string.id_vec.size());
+  for (int i = 0; i < line_string.id_vec.size(); i++)
+  {
+    LL2Point p = ll2_points_.getPoint(line_string.id_vec[i]);
+    left_lane.push_back(p);
+  }
+
+  return true;
+}
+
+bool LaneletParser::isInside(const double& x, const double& y, double& elev)
+{
+  for (int lanelet_id = 0; lanelet_id < ll2_lanelets_.size(); lanelet_id++)
+  {
+    std::vector<LL2Point> right_line, left_line;
+    getLanePointVec(lanelet_id, right_line, left_line);
+
+    int cross_num = 0;    
+    LL2Point last_p = right_line[0];
+    double min_range = (right_line[0].local_x - x) * (right_line[0].local_x - x) + (right_line[0].local_y - y) * (right_line[0].local_y);
+    elev = right_line[0].elevation;
+    for (int i = 1; i < right_line.size(); i++)
+    {
+      LL2Point q = right_line[i];
+      if (isCross(x, y, last_p, q)) cross_num++;
+      last_p = q;
+
+      double range = (right_line[i].local_x - x) * (right_line[i].local_y - y) + (right_line[i].local_y - y) * (right_line[i].local_y - y); 
+      if (range < min_range)
+      {
+        min_range = range;
+        elev = right_line[i].elevation;
+      }
+    }
+
+    for (int i = left_line.size() - 1; i >= 0; i--)
+    {
+      LL2Point q = left_line[i];
+      if (isCross(x, y, last_p, q)) cross_num++;
+      last_p = q;
+
+      double range = (left_line[i].local_x - x) * (left_line[i].local_y - y) + (left_line[i].local_y - y) * (left_line[i].local_y - y); 
+      if (range < min_range)
+      {
+        min_range = range;
+        elev = left_line[i].elevation;
+      }
+    }
+
+    if (isCross(x, y, last_p, right_line[0])) cross_num++;
+
+    if (cross_num % 2 == 1) return true;
+  }
+
+  return false;
+}
+
+bool LaneletParser::isCross(const double& x, const double& y, const LL2Point& p, const LL2Point& q)
+{
+  if ((p.local_y < y && q.local_y < y) || (y < p.local_y && y < q.local_y))
+    return false;
+
+  if (p.local_y == q.local_y) return false;
+
+  double test_x = p.local_x + (q.local_x - p.local_x) * (y - p.local_y) / (q.local_y - p.local_y);
+  return test_x >= x;
+}
+
+  // visualization_msgs::Marker ls_msg;
+  // ls_msg.header.frame_id = "map";
+  // ls_msg.header.stamp = ros::Time::now();
+  // ls_msg.action = visualization_msgs::Marker::ADD;
+  // ls_msg.pose.orientation.w = 1.0;
+  // ls_msg.id = 0;
+  // ls_msg.type = visualization_msgs::Marker::LINE_LIST;
+  // ls_msg.scale.x = 0.2;
+  // ls_msg.color.g = 1.0;
+  // ls_msg.color.a = 1.0;
+
+  // for (int k = 0; k < ll2lanelets.size(); k++)
+  // {
+  //   LL2LaneLet ll = ll2lanelets.getLaneLetBySeq(k);
+  //   std::cout << "right: " << ll.right_id << ", left: " << ll.left_id << std::endl;
+  //   
+  //   LL2LineString line_string = ll2linestrings.getLineString(ll.right_id);
+
+  //   for (int i = 0; i < line_string.id_vec.size(); i++)
+  //   {
+  //     LL2Point p = ll2points.getPoint(line_string.id_vec[i]);
+  //     geometry_msgs::Point q;
+  //     q.x = p.local_x;
+  //     q.y = p.local_y;
+  //     q.z = p.elevation;
+  //     if (i != 0 && i != line_string.id_vec.size() - 1)
+  //       ls_msg.points.push_back(q);
+  //     ls_msg.points.push_back(q);
+  //   }
+
+  //   line_string = ll2linestrings.getLineString(ll.left_id);
+
+  //   for (int i = 0; i < line_string.id_vec.size(); i++)
+  //   {
+  //     LL2Point p = ll2points.getPoint(line_string.id_vec[i]);
+  //     geometry_msgs::Point q;
+  //     q.x = p.local_x;
+  //     q.y = p.local_y;
+  //     q.z = p.elevation;
+  //     if (i != 0 && i != line_string.id_vec.size() - 1)
+  //       ls_msg.points.push_back(q);
+  //     ls_msg.points.push_back(q);
+  //   }
+  // }
+
+  // pub.publish(ls_msg);
+
+  // ros::spin();

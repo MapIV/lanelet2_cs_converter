@@ -1,13 +1,13 @@
 # lanelet2_cs_converter
 
-(Updated 2022/06/17)
+(Updated 2022/08/09)
 
 ## Install
 
 ```
 $ mkdir -p lanelet2_ws/src
 $ cd lanelet2_ws/src
-$ git clone https://gitlab.com/MapIV/map4_engine.git
+$ git clone https://github.com/MapIV/lanelet2_cs_converter.git
 $ git clone https://github.com/MapIV/llh_converter.git
 $ cd ../
 $ catkin_make -DCMAKE_BUILD_TYPE=Release
@@ -21,6 +21,16 @@ This process re-calculate the Lat/Lon from JPRCS coordinates.
 
 ```
 $ ./devel/lib/lanelet2_cs_converter/jprcs <INPUT_OSM> <OUTPUT_OSM> <PLANE_NUM>
+```
+
+## elevation_map_checker
+
+Visualize elevation_map info with 2D OccupancyGrid map. Detailed configuration is in [sample.yaml](./config/sample.yaml).
+
+### Usage
+
+```
+$ ./src/lanelet2_cs_converter/scripts/elevation_map.sh <PCD> <OSM>
 ```
 
 ## LICENSE

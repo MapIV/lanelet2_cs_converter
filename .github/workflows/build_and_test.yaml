@@ -19,6 +19,7 @@ jobs:
           repository: MapIV/llh_converter
           path: src/llh_converter
 
-      - run: |
-        pwd
-        ls -la
+      - name: Check
+        run: |
+          pwd
+          ls -la

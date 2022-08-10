@@ -1,6 +1,6 @@
 name: Build and Test
 
-on: push
+on: pull_request
 
 jobs:
   build-and-test:
@@ -51,4 +51,3 @@ jobs:
           rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
           catkin_make -DCMAKE_BUILD_TYPE=Release
         shell: bash
-

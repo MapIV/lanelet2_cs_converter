@@ -6,10 +6,10 @@ jobs:
   build-and-test:
     strategy:
       matrix:
-        image: [ros:melodic, ros:noetic]
+        image: [melodic, noetic]
     runs-on: ubuntu-20.04
     container:
-      image: ${{matrix.image}}
+      image: ros:${{matrix.image}}
   
     steps:
       - name: Checkout repository

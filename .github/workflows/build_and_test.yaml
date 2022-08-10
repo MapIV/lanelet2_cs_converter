@@ -4,9 +4,12 @@ on: push
 
 jobs:
   build-and-test:
+    strategy:
+      matrix:
+        image: [ros:melodic, ros:noetic]
     runs-on: ubuntu-20.04
-    container: 
-      image: ros:melodic
+    container:
+      image: ${{matrix.image}}
   
     steps:
       - name: Checkout repository
@@ -26,6 +29,7 @@ jobs:
           geographiclib-get-geoids best
           mkdir -p /usr/share/GSIGEO
           cp src/llh_converter/data/gsigeo2011_ver2_1.asc /usr/share/GSIGEO/
+        shell: bash
 
       - name: Build
         run: |

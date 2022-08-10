@@ -21,9 +21,8 @@ jobs:
 
       - name: Check
         run: |
-          ls /opt/ros/melodic
           . /opt/ros/melodic/setup.bash
-          pwd
+          apt update
           rosdep update
           rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
           catkin_make -DCMAKE_BUILD_TYPE=Release

@@ -30,6 +30,10 @@ jobs:
           mkdir -p /usr/share/GSIGEO
           cp src/llh_converter/data/gsigeo2011_ver2_1.asc /usr/share/GSIGEO/
         shell: bash
+      
+      - name: Noninteractive
+        if: matrix.image == 'noetic'
+        run: export DEBIAN_FRONTEND=noninteractive
 
       - name: Build
         run: |

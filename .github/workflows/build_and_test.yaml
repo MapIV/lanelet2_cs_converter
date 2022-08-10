@@ -1,0 +1,53 @@
+name: Build and Test
+
+on: pull_request
+
+jobs:
+  build-and-test:
+    strategy:
+      matrix:
+        image: [melodic, noetic]
+    runs-on: ubuntu-20.04
+    container:
+      image: ros:${{matrix.image}}
+  
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          path: src/lanelet2_cs_converter
+      - name: Checkout llh_converter
+        uses: actions/checkout@v2
+        with:
+          repository: MapIV/llh_converter
+          path: src/llh_converter
+
+      - name: Install dependencies
+        run: |
+          apt update
+          apt install -y libgeographic-dev geographiclib-tools geographiclib-doc
+          geographiclib-get-geoids best
+          mkdir -p /usr/share/GSIGEO
+          cp src/llh_converter/data/gsigeo2011_ver2_1.asc /usr/share/GSIGEO/
+        shell: bash
+      
+      - name: Build on noetic
+        if: matrix.image == 'noetic'
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          source /opt/ros/${{matrix.image}}/setup.bash
+          apt update
+          rosdep update
+          rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+          catkin_make -DCMAKE_BUILD_TYPE=Release
+        shell: bash
+
+      - name: Build on melodic
+        if: matrix.image == 'melodic'
+        run: |
+          source /opt/ros/${{matrix.image}}/setup.bash
+          apt update
+          rosdep update
+          rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+          catkin_make -DCMAKE_BUILD_TYPE=Release
+        shell: bash

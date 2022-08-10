@@ -1,5 +1,7 @@
 # lanelet2_cs_converter
 
+[![Build and Test](https://github.com/MapIV/lanelet2_cs_converter/actions/workflows/build_and_test.yaml/badge.svg)](https://github.com/MapIV/lanelet2_cs_converter/actions/workflows/build_and_test.yaml)
+
 (Updated 2022/08/09)
 
 ## Install

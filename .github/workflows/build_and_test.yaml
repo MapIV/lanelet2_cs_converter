@@ -22,7 +22,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt update
-          apt install libgeographic-dev geographiclib-tools geographiclib-doc
+          apt install -y libgeographic-dev geographiclib-tools geographiclib-doc
           geographiclib-get-geoids best
           mkdir -p /usr/share/GSIGEO
           cp src/llh_converter/data/gsigeo2011_ver2_1.asc /usr/share/GSIGEO/

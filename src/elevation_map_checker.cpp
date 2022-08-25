@@ -53,30 +53,33 @@ int main(int argc, char** argv)
   ls_msg.color.g = 1.0;
   ls_msg.color.a = 1.0;
 
+  double z_origin = 0;
 
   for (int i = 0; i < lanelet_parser.size(); i++)
   {
     std::vector<LL2Point> right_lane, left_lane;
     lanelet_parser.getLanePointVec(i, right_lane, left_lane);
 
-    for (int i = 0; i < right_lane.size(); i++)
+    for (int j = 0; j < right_lane.size(); j++)
     {
       geometry_msgs::Point p;
-      p.x = right_lane[i].local_x;
-      p.y = right_lane[i].local_y;
-      p.z = right_lane[i].elevation;
-      if (i != 0)
+      p.x = right_lane[j].local_x;
+      p.y = right_lane[j].local_y;
+      p.z = right_lane[j].elevation;
+      if (j != 0)
         ls_msg.points.push_back(p);
+      else
+        z_origin = p.z;
       ls_msg.points.push_back(p);
     }
 
-    for (int i = left_lane.size() - 1; i >= 0; i--)
+    for (int j = left_lane.size() - 1; j >= 0; j--)
     {
       geometry_msgs::Point p;
-      p.x = left_lane[i].local_x;
-      p.y = left_lane[i].local_y;
-      p.z = left_lane[i].elevation;
-      if (i != 0)
+      p.x = left_lane[j].local_x;
+      p.y = left_lane[j].local_y;
+      p.z = left_lane[j].elevation;
+      if (j != 0)
         ls_msg.points.push_back(p);
       ls_msg.points.push_back(p);
     }
@@ -85,9 +88,7 @@ int main(int argc, char** argv)
   gm::setVerbosityLevelToDebugIfFlagSet(nh);
 
   grid_map::GridMapPclLoader grid_map_pcl_loader;
-  std::cout << "ok" << std::endl;
   grid_map_pcl_loader.loadParameters(config_file);
-  std::cout << "ok" << std::endl;
 
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::io::loadPCDFile(input_pcd, *cloud);
@@ -102,9 +103,7 @@ int main(int argc, char** argv)
   grid_map_pcl_loader.setInputCloud(cloud);
 
   grid_map_pcl_loader.preProcessInputCloud();
-  std::cout << "preprocess" << std::endl;
   grid_map_pcl_loader.initializeGridMapGeometryFromInputCloud();
-  std::cout << "init" << std::endl;
   grid_map_pcl_loader.addLayerFromInputCloud(std::string("elevation"));
 
   grid_map::GridMap elevation_map = grid_map_pcl_loader.getGridMap();
@@ -120,7 +119,6 @@ int main(int argc, char** argv)
   int y_size = elevation_map.getLength()[1];
   int x_origin = elevation_map.getPosition()[0];
   int y_origin = elevation_map.getPosition()[1];
-  int z_origin = elevation_map.atPosition(std::string("elevation"), elevation_map.getPosition());
 
   std::cout << "Length: " << x_size << ", " << y_size << std::endl;
   std::cout << "Position: " << x_origin << ", " << y_origin << std::endl;
@@ -182,21 +180,6 @@ int main(int argc, char** argv)
     int id_y = i / width;
     double x = p.x + id_x * resolution;
     double y = p.y + id_y * resolution;
-    // grid_map::Position pos(x, y);
-    // if (elevation_map.isInside(pos))
-    // {
-    //   double value = elevation_map.atPosition(std::string("elevation"), pos);
-    //   if (std::isnan(value))
-    //     og.data[i] = -1;
-    //   else
-    //   {
-    //     og.data[i] = value;
-    //     if (value > value_max) value_max = value;
-    //     if (value < value_min) value_min = value;
-    //   }
-    // }
-    // else
-    //   og.data[i] = -1;
     double elev;
     if (lanelet_parser.isInside(x, y, elev))
     {
@@ -219,29 +202,10 @@ int main(int argc, char** argv)
   }
   std::cout << std::endl;
 
-  // std::cout << "value_max: " << value_max << std::endl;
-  // std::cout << "value_min: " << value_min << std::endl;
-
-  // value_min = value_min + 7;
-  // value_max = value_min + 3;
-
-  // for (int i = 0; i < width * height; i++)
-  // {
-  //   if (og.data[i] != -1)
-  //   {
-  //     og.data[i] = (og.data[i] - value_min) / (value_max - value_min) * 100;
-  //     if (og.data[i] < 0) og.data[i] = 0;
-  //     if (og.data[i] > 100) og.data[i] = 100;
-  //   }
-  // }
-
   lane_pub.publish(ls_msg);
   elev_pub.publish(msg);
   og_pub.publish(og);
   std::cout << "published" << std::endl;
-
-  grid_map::Position pos(p.x + 5, p.y + 5);
-  std::cout << "cell: " << elevation_map.atPosition(std::string("elevation"), pos) << std::endl;
 
   br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "world", "map"));
   while (ros::ok())

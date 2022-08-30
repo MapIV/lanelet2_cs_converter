@@ -180,10 +180,13 @@ int main(int argc, char** argv)
     int id_y = i / width;
     double x = p.x + id_x * resolution;
     double y = p.y + id_y * resolution;
+
+    // std::cout << id_x << ", " << id_y << ", " << x << ", " << y << std::endl;
     double elev;
     if (lanelet_parser.isInside(x, y, elev))
     {
       grid_map::Position pos(x, y);
+      if (!elevation_map.isInside(pos)) continue;
       double h = elevation_map.atPosition(std::string("elevation"), pos);
 
       if (std::isnan(h))

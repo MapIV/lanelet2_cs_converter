@@ -32,6 +32,7 @@ Visualize elevation_map info with 2D OccupancyGrid map. Detailed configuration i
 ### Usage
 
 ```
+$ source devel/setup.bash
 $ ./src/lanelet2_cs_converter/scripts/elevation_map.sh <PCD> <OSM>
 ```
 

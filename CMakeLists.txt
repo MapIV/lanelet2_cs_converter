@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   grid_map_core
   grid_map_pcl
   nav_msgs
+  kml_generator
   # lanelet2_io
   # lanelet2_core
   # lanelet2_projection
@@ -45,3 +46,9 @@ add_executable(elevation_map_checker
   src/tinyxml2.cpp)
 target_link_libraries(elevation_map_checker ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 add_dependencies(elevation_map_checker ${catkin_EXPORTED_TARGETS})
+
+add_executable(lanelet2kml
+  src/lanelet2kml.cpp
+  src/lanelet2_parser.cpp
+  src/tinyxml2.cpp)
+target_link_libraries(lanelet2kml ${catkin_LIBRARIES})
